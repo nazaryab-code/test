@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/loginForm.css';
 import API_BASE_URL from './apiConfig';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +8,16 @@ function LoginForm({ setLogin, setUserName }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loginMessage, setLoginMessage] = useState(null);
+  const [loginMessage, setLoginMessage] = useState('');
+
+  useEffect(() => {
+    // Check if user session exists in session storage
+    const userSession = sessionStorage.getItem('userSession');
+    if (userSession) {
+      setLogin(true);
+      setUserName(JSON.parse(userSession));
+    }
+  }, [setLogin, setUserName]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -25,8 +34,6 @@ function LoginForm({ setLogin, setUserName }) {
       if (response.ok) {
         const userSession = await response.json();
         sessionStorage.setItem('userSession', JSON.stringify(userSession));
-        console.log('usersSession ', userSession); 
-        console.log('usersSession ', userSession.full_name); 
         setLogin(true);
         setUserName(userSession);
       } else {
@@ -35,7 +42,12 @@ function LoginForm({ setLogin, setUserName }) {
       }      
     } catch (error) {
       console.error('Error during login:', error);
-      setLoginMessage(`Internal Server Error: ${error.message}`);
+      if (error.message.includes('process is not defined')) {
+        // Show dialog message for the specific error
+        alert('An error occurred during login. Please try again later.');
+      } else {
+        setLoginMessage(`Internal Server Error: ${error.message}`);
+      }
     }
   };
 
